@@ -1,11 +1,11 @@
-name: 'Terraform Test'
+name: 'Terraform Plan Apply'
 
 on:
   push:
     branches: [ "main" ]
 
 jobs:
-  terraform-test:
+  terraform-plan:
     name: 'Terraform test'
     runs-on: ubuntu-latest
 
@@ -13,6 +13,12 @@ jobs:
     # Checkout the repository to the GitHub Actions runner
     - name: Checkout
       uses: actions/checkout@v3
+
+    # Login to Azure using github secret
+    - name: Login to Azure
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
 
     # Install the latest version of Terraform CLI and configure the Terraform CLI configuration file with a Terraform Cloud user API token
     - name: Setup Terraform
@@ -22,10 +28,12 @@ jobs:
     - name: Terraform Init
       run: terraform init
 
-    # Checks that all Terraform configuration files adhere to a canonical format
-    - name: Terraform Format
-      run: terraform fmt -check
-
-    # Terraform Validate
-    - name: Terraform Validate
-      run: terraform validate
+    # Generate terraform execution plan
+    - name: Terraform Plan
+      run: terraform plan -out=tfplan.out
+    
+    - name: Save Terraform Plan Artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: tfplan
+        path: tfplan.out
